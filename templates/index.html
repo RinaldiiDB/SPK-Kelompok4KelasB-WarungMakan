@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SPK SAW – Penentuan Harga Barang UMKM Warung Makan Alden</title>
+  <meta name="description" content="Sistem Pendukung Keputusan Penentuan Harga Barang untuk UMKM Warung Makan Alden menggunakan metode SAW"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <!-- HERO HEADER -->
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="badge">Sistem Pendukung Keputusan · Kelompok 4 Kelas B</div>
+      <h1>Penentuan Harga Barang</h1>
+      <p class="hero-sub">UMKM <strong>Warung Makan Alden</strong> — Metode <span class="highlight">SAW</span> (Simple Additive Weighting)</p>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- SKALA PENILAIAN INFO -->
+    <section class="card info-row">
+      <div class="info-block">
+        <h2>📊 Skala Penilaian</h2>
+        <table class="mini-table">
+          <thead><tr><th>Nilai</th><th>Keterangan</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Sangat Rendah</td></tr>
+            <tr><td>2</td><td>Rendah</td></tr>
+            <tr><td>3</td><td>Cukup</td></tr>
+            <tr><td>4</td><td>Tinggi</td></tr>
+            <tr><td>5</td><td>Sangat Tinggi</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="info-block">
+        <h2>🎯 Tipe Kriteria</h2>
+        <ul class="crit-list">
+          <li><span class="badge-cost">Cost</span> C1 – Biaya Produksi</li>
+          <li><span class="badge-benefit">Benefit</span> C2 – Harga Pasar</li>
+          <li><span class="badge-benefit">Benefit</span> C3 – Tingkat Permintaan</li>
+          <li><span class="badge-benefit">Benefit</span> C4 – Kualitas Produk</li>
+          <li><span class="badge-benefit">Benefit</span> C5 – Keuntungan Diinginkan</li>
+        </ul>
+      </div>
+      <div class="info-block">
+        <h2>📐 Formula SAW</h2>
+        <div class="formula-box">
+          <p><strong>Normalisasi Benefit:</strong><br/>r<sub>ij</sub> = x<sub>ij</sub> / max(x<sub>j</sub>)</p>
+          <p><strong>Normalisasi Cost:</strong><br/>r<sub>ij</sub> = min(x<sub>j</sub>) / x<sub>ij</sub></p>
+          <p><strong>Skor Akhir:</strong><br/>V<sub>i</sub> = Σ (w<sub>j</sub> × r<sub>ij</sub>)</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- INPUT SECTION -->
+    <section class="card">
+      <h2>⚙️ Input Data</h2>
+
+      <!-- CRITERIA TABLE -->
+      <div class="section-label">Kriteria & Bobot</div>
+      <div class="table-wrap">
+        <table id="criteria-table" class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nama Kriteria</th>
+              <th>Tipe</th>
+              <th>Bobot (W)</th>
+            </tr>
+          </thead>
+          <tbody id="criteria-body">
+            <!-- Rendered by JS -->
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-right fw-600">Total Bobot:</td>
+              <td><span id="weight-total" class="weight-total">0.00</span></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- ALTERNATIVES TABLE -->
+      <div class="section-label mt-20">Alternatif & Nilai</div>
+      <div class="table-wrap">
+        <table id="alt-table" class="data-table">
+          <thead>
+            <tr>
+              <th>Alternatif</th>
+              <th id="col-c1">C1</th>
+              <th id="col-c2">C2</th>
+              <th id="col-c3">C3</th>
+              <th id="col-c4">C4</th>
+              <th id="col-c5">C5</th>
+            </tr>
+          </thead>
+          <tbody id="alt-body">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-reset" class="btn btn-ghost">↺ Reset Default</button>
+        <button id="btn-calc" class="btn btn-primary">🔢 Hitung SAW</button>
+      </div>
+    </section>
+
+    <!-- RESULTS SECTION (hidden until calculated) -->
+    <section id="results-section" class="hidden">
+
+      <!-- NORMALIZATION TABLE -->
+      <div class="card">
+        <h2>📋 Matriks Normalisasi (R)</h2>
+        <div class="table-wrap">
+          <table id="norm-table" class="data-table result-table">
+            <thead id="norm-thead"></thead>
+            <tbody id="norm-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RANKING TABLE -->
+      <div class="card">
+        <h2>🏆 Hasil Perhitungan & Ranking</h2>
+        <div class="table-wrap">
+          <table id="rank-table" class="data-table result-table">
+            <thead id="rank-thead"></thead>
+            <tbody id="rank-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- WINNER CARD -->
+      <div id="winner-card" class="winner-card card"></div>
+
+    </section>
+
+    <!-- ERROR TOAST -->
+    <div id="toast" class="toast hidden"></div>
+
+  </main>
+
+  <footer class="footer">
+    <p>SPK Penentuan Harga Barang · Kelompok 4 Kelas B · Metode SAW</p>
+  </footer>
+
+  <script src="/static/main.js"></script>
+</body>
+</html>
