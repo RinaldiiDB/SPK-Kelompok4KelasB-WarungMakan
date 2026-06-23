@@ -22,13 +22,13 @@ const DEFAULT = {
 let state = JSON.parse(JSON.stringify(DEFAULT));
 
 // ---- DOM refs ----
-const criteriaBody  = document.getElementById("criteria-body");
-const altBody       = document.getElementById("alt-body");
-const weightTotal   = document.getElementById("weight-total");
-const btnCalc       = document.getElementById("btn-calc");
-const btnReset      = document.getElementById("btn-reset");
+const criteriaBody   = document.getElementById("criteria-body");
+const altBody        = document.getElementById("alt-body");
+const weightTotal    = document.getElementById("weight-total");
+const btnCalc        = document.getElementById("btn-calc");
+const btnReset       = document.getElementById("btn-reset");
 const resultsSection = document.getElementById("results-section");
-const toast         = document.getElementById("toast");
+const toast          = document.getElementById("toast");
 
 // =============================================
 //  RENDER CRITERIA TABLE
@@ -93,11 +93,21 @@ function renderAlternatives() {
 }
 
 // =============================================
+//  BUILD SHARED TABLE HEADER
+// =============================================
+function buildNormHeader(criteria, extraLabel) {
+  let hRow = `<tr><th>${extraLabel || 'Alternatif'}</th>`;
+  criteria.forEach(c => { hRow += `<th>${c.id}<br/><small>(${c.type})</small></th>`; });
+  hRow += `</tr>`;
+  return hRow;
+}
+
+// =============================================
 //  CALCULATE
 // =============================================
 btnCalc.addEventListener("click", async () => {
   btnCalc.disabled = true;
-  btnCalc.textContent = "⏳ Menghitung...";
+  btnCalc.textContent = "Menghitung...";
 
   try {
     const res = await fetch("/calculate", {
@@ -108,7 +118,7 @@ btnCalc.addEventListener("click", async () => {
     const data = await res.json();
 
     if (!res.ok || data.error) {
-      showToast("⚠️ " + (data.error || "Terjadi kesalahan"));
+      showToast(data.error || "Terjadi kesalahan");
       return;
     }
 
@@ -117,10 +127,10 @@ btnCalc.addEventListener("click", async () => {
     resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
 
   } catch (e) {
-    showToast("⚠️ Gagal menghubungi server: " + e.message);
+    showToast("Gagal menghubungi server: " + e.message);
   } finally {
     btnCalc.disabled = false;
-    btnCalc.textContent = "🔢 Hitung SAW";
+    btnCalc.textContent = "Hitung SAW";
   }
 });
 
@@ -129,64 +139,94 @@ btnCalc.addEventListener("click", async () => {
 // =============================================
 function renderResults(data) {
   const { results, criteria } = data;
-  const n = criteria.length;
-  const medals = ["🥇", "🥈", "🥉"];
+  const medals = ["", "", ""];
 
-  // ---- Normalization Table ----
-  const normThead = document.getElementById("norm-thead");
-  const normTbody = document.getElementById("norm-tbody");
+  // Sort by original input order (label v1, v2, ...)
+  const byLabel = [...results].sort((a, b) => a.label.localeCompare(b.label));
 
-  let hRow = `<tr><th>Alternatif</th>`;
-  criteria.forEach(c => { hRow += `<th>${c.id}<br/><small>(${c.type})</small></th>`; });
-  hRow += `</tr>`;
-  normThead.innerHTML = hRow;
-
-  normTbody.innerHTML = "";
-  // Re-sort by original order (rank may differ from input order)
-  const byName = [...results].sort((a, b) => a.name.localeCompare(b.name));
-  byName.forEach(r => {
-    let row = `<tr><td><strong>${r.name}</strong></td>`;
-    r.normalized.forEach(v => {
-      row += `<td>${v.toFixed(4)}</td>`;
+  // ----------------------------------------------------------------
+  // 1. MATRIKS TERNORMALISASI — PECAHAN
+  // ----------------------------------------------------------------
+  document.getElementById("norm-frac-thead").innerHTML = buildNormHeader(criteria, "Alternatif");
+  let fracBody = "";
+  byLabel.forEach(r => {
+    fracBody += `<tr><td><strong>${r.name}</strong></td>`;
+    r.normalized_fraction.forEach(v => {
+      fracBody += `<td class="frac-cell">${v}</td>`;
     });
-    row += `</tr>`;
-    normTbody.innerHTML += row;
+    fracBody += `</tr>`;
   });
+  document.getElementById("norm-frac-tbody").innerHTML = fracBody;
 
-  // ---- Ranking Table ----
-  const rankThead = document.getElementById("rank-thead");
-  const rankTbody = document.getElementById("rank-tbody");
+  // ----------------------------------------------------------------
+  // 2. MATRIKS TERNORMALISASI — DESIMAL
+  // ----------------------------------------------------------------
+  document.getElementById("norm-dec-thead").innerHTML = buildNormHeader(criteria, "Alternatif");
+  let decBody = "";
+  byLabel.forEach(r => {
+    decBody += `<tr><td><strong>${r.name}</strong></td>`;
+    r.normalized_decimal.forEach(v => {
+      // Show up to 4 significant decimal places, trimmed
+      decBody += `<td>${parseFloat(v.toFixed(4))}</td>`;
+    });
+    decBody += `</tr>`;
+  });
+  document.getElementById("norm-dec-tbody").innerHTML = decBody;
 
-  rankThead.innerHTML = `<tr>
+  // ----------------------------------------------------------------
+  // 3. NILAI PREFERENSI — cards
+  // ----------------------------------------------------------------
+  const bestScore = Math.max(...byLabel.map(r => r.score));
+  let prefHTML = "";
+  byLabel.forEach(r => {
+    const isBest = r.score === bestScore;
+    prefHTML += `
+      <div class="pref-card ${isBest ? 'pref-best' : ''}">
+        <div class="pref-label">${r.label}</div>
+        <div class="pref-alt">${r.name}</div>
+        <div class="pref-score">${r.score.toFixed(3)}</div>
+      </div>`;
+  });
+  document.getElementById("pref-grid").innerHTML = prefHTML;
+
+  // ----------------------------------------------------------------
+  // 4. RANKING TABLE
+  // ----------------------------------------------------------------
+  document.getElementById("rank-thead").innerHTML = `<tr>
     <th>Rank</th>
+    <th>Label</th>
     <th>Alternatif</th>
     ${criteria.map(c => `<th>r<sub>${c.id.toLowerCase()}</sub></th>`).join("")}
-    <th>Skor (V<sub>i</sub>)</th>
+    <th>Nilai (V<sub>i</sub>)</th>
   </tr>`;
 
-  rankTbody.innerHTML = "";
-  results.forEach(r => {
-    const medal = medals[r.rank - 1] || "";
+  let rankBody = "";
+  results.forEach(r => {         // results is already sorted by rank
+    const medal    = medals[r.rank - 1] || "";
     const rowClass = r.rank === 1 ? "rank-1" : "";
-    let row = `<tr class="${rowClass}">
+    rankBody += `<tr class="${rowClass}">
       <td><span class="rank-medal">${medal}</span>${r.rank}</td>
-      <td><strong>${r.name}</strong></td>`;
-    r.normalized.forEach(v => { row += `<td>${v.toFixed(4)}</td>`; });
-    row += `<td class="${r.rank===1?'best':''}">${r.score.toFixed(4)}</td>`;
-    row += `</tr>`;
-    rankTbody.innerHTML += row;
+      <td><strong>${r.label}</strong></td>
+      <td>${r.name}</td>`;
+    r.normalized_decimal.forEach(v => {
+      rankBody += `<td>${parseFloat(v.toFixed(4))}</td>`;
+    });
+    rankBody += `<td class="${r.rank===1?'best':''}">${r.score.toFixed(3)}</td>`;
+    rankBody += `</tr>`;
   });
+  document.getElementById("rank-tbody").innerHTML = rankBody;
 
-  // ---- Winner Card ----
+  // ----------------------------------------------------------------
+  // 5. WINNER CARD
+  // ----------------------------------------------------------------
   const winner = results[0];
   document.getElementById("winner-card").innerHTML = `
-    <span class="trophy">🏆</span>
     <h3>Alternatif Terbaik</h3>
     <div class="winner-name">${winner.name}</div>
-    <div class="winner-score">Skor SAW: <strong>${winner.score.toFixed(4)}</strong></div>
+    <div class="winner-score">Nilai Preferensi (${winner.label}): <strong>${winner.score.toFixed(3)}</strong></div>
     <p style="margin-top:12px;color:#94a3b8;font-size:.85rem;">
       Berdasarkan perhitungan SAW dengan ${criteria.length} kriteria,
-      <strong>${winner.name}</strong> memperoleh nilai tertinggi
+      <strong>${winner.name}</strong> memperoleh nilai preferensi tertinggi
       dan direkomendasikan sebagai harga yang optimal.
     </p>
   `;

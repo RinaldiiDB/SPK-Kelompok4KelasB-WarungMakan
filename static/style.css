@@ -321,6 +321,13 @@ body {
 .result-table td.best { color: var(--success); font-weight: 700; }
 .result-table td.good { color: #86efac; }
 
+.frac-cell {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.02em;
+  color: #a5b4fc;
+  font-weight: 500;
+}
+
 .rank-1 td { background: rgba(245,158,11,0.06) !important; }
 .rank-1 td:first-child { border-left: 3px solid var(--accent); }
 
@@ -385,6 +392,74 @@ body {
 @keyframes slideUp {
   from { transform: translate(-50%, 20px); opacity: 0; }
   to   { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* ===========================
+   TABLE DESC
+=========================== */
+.table-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+/* ===========================
+   NILAI PREFERENSI GRID
+=========================== */
+.pref-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.pref-card {
+  flex: 1;
+  min-width: 110px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 14px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pref-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.pref-card.pref-best {
+  border-color: rgba(245,158,11,0.5);
+  background: rgba(245,158,11,0.08);
+}
+
+.pref-card .pref-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.pref-card .pref-alt {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.pref-card .pref-score {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.pref-card.pref-best .pref-score {
+  background: linear-gradient(135deg, #f59e0b, #fde68a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* ===========================

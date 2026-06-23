@@ -1,15 +1,15 @@
 from flask import Flask, render_template, request, jsonify
-import json
+from math import gcd
 
 app = Flask(__name__)
 
 # Default data sesuai soal
 DEFAULT_DATA = {
     "criteria": [
-        {"id": "C1", "name": "Biaya Produksi", "type": "cost",    "weight": 0.30},
-        {"id": "C2", "name": "Harga Pasar",    "type": "benefit", "weight": 0.15},
-        {"id": "C3", "name": "Tingkat Permintaan", "type": "benefit", "weight": 0.15},
-        {"id": "C4", "name": "Kualitas Produk",    "type": "benefit", "weight": 0.15},
+        {"id": "C1", "name": "Biaya Produksi",       "type": "cost",    "weight": 0.30},
+        {"id": "C2", "name": "Harga Pasar",           "type": "benefit", "weight": 0.15},
+        {"id": "C3", "name": "Tingkat Permintaan",    "type": "benefit", "weight": 0.15},
+        {"id": "C4", "name": "Kualitas Produk",       "type": "benefit", "weight": 0.15},
         {"id": "C5", "name": "Keuntungan Diinginkan", "type": "benefit", "weight": 0.25},
     ],
     "alternatives": [
@@ -21,49 +21,78 @@ DEFAULT_DATA = {
     ]
 }
 
+def simplify_fraction(num, den):
+    """Return fraction string in simplified form, e.g. '3/5'."""
+    if den == 0:
+        return "0"
+    # Work with integers if possible
+    try:
+        num_i = int(round(num))
+        den_i = int(round(den))
+        common = gcd(abs(num_i), abs(den_i))
+        n = num_i // common
+        d = den_i // common
+        if d == 1:
+            return str(n)
+        return f"{n}/{d}"
+    except Exception:
+        return f"{round(num/den, 4)}"
+
 def saw_calculate(criteria, alternatives):
-    n_alt = len(alternatives)
+    n_alt  = len(alternatives)
     n_crit = len(criteria)
 
     # Ambil matrix nilai
     matrix = [alt["values"] for alt in alternatives]
 
-    # Normalisasi
-    normalized = []
+    # Normalisasi — hitung pecahan DAN desimal
+    normalized_decimal  = []   # float values
+    normalized_fraction = []   # string "num/den"
+
     for i in range(n_alt):
-        row = []
+        row_dec  = []
+        row_frac = []
         for j in range(n_crit):
             col_values = [matrix[a][j] for a in range(n_alt)]
             if criteria[j]["type"] == "benefit":
-                row.append(matrix[i][j] / max(col_values))
+                max_val = max(col_values)
+                dec_val = matrix[i][j] / max_val
+                row_dec.append(dec_val)
+                row_frac.append(simplify_fraction(matrix[i][j], max_val))
             else:  # cost
-                row.append(min(col_values) / matrix[i][j])
-        normalized.append(row)
+                min_val = min(col_values)
+                dec_val = min_val / matrix[i][j]
+                row_dec.append(dec_val)
+                row_frac.append(simplify_fraction(min_val, matrix[i][j]))
+        normalized_decimal.append(row_dec)
+        normalized_fraction.append(row_frac)
 
-    # Hitung skor akhir
+    # Hitung skor akhir (Nilai Preferensi)
     scores = []
     for i in range(n_alt):
-        score = sum(normalized[i][j] * criteria[j]["weight"] for j in range(n_crit))
-        scores.append(round(score, 4))
+        score = sum(normalized_decimal[i][j] * criteria[j]["weight"] for j in range(n_crit))
+        scores.append(round(score, 3))
 
     # Ranking
     ranked = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)
-    ranks = [0] * n_alt
+    ranks  = [0] * n_alt
     for rank_pos, (alt_idx, _) in enumerate(ranked):
         ranks[alt_idx] = rank_pos + 1
 
     results = []
     for i in range(n_alt):
         results.append({
-            "name": alternatives[i]["name"],
-            "original": matrix[i],
-            "normalized": [round(v, 4) for v in normalized[i]],
-            "score": scores[i],
-            "rank": ranks[i]
+            "name":                 alternatives[i]["name"],
+            "label":                f"v{i+1}",
+            "original":             matrix[i],
+            "normalized_fraction":  normalized_fraction[i],
+            "normalized_decimal":   [round(v, 4) for v in normalized_decimal[i]],
+            "score":                scores[i],
+            "rank":                 ranks[i],
         })
 
     results_sorted = sorted(results, key=lambda x: x["rank"])
-    return results_sorted, normalized
+    return results_sorted
 
 @app.route("/")
 def index():
@@ -72,7 +101,7 @@ def index():
 @app.route("/calculate", methods=["POST"])
 def calculate():
     try:
-        payload = request.get_json()
+        payload      = request.get_json()
         criteria     = payload["criteria"]
         alternatives = payload["alternatives"]
 
@@ -86,8 +115,9 @@ def calculate():
         for alt in alternatives:
             alt["values"] = [float(v) for v in alt["values"]]
 
-        results, normalized = saw_calculate(criteria, alternatives)
+        results = saw_calculate(criteria, alternatives)
         return jsonify({"success": True, "results": results, "criteria": criteria})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

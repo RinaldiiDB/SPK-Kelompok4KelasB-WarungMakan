@@ -25,7 +25,7 @@
     <!-- SKALA PENILAIAN INFO -->
     <section class="card info-row">
       <div class="info-block">
-        <h2>📊 Skala Penilaian</h2>
+        <h2>Skala Penilaian</h2>
         <table class="mini-table">
           <thead><tr><th>Nilai</th><th>Keterangan</th></tr></thead>
           <tbody>
@@ -38,7 +38,7 @@
         </table>
       </div>
       <div class="info-block">
-        <h2>🎯 Tipe Kriteria</h2>
+        <h2>Tipe Kriteria</h2>
         <ul class="crit-list">
           <li><span class="badge-cost">Cost</span> C1 – Biaya Produksi</li>
           <li><span class="badge-benefit">Benefit</span> C2 – Harga Pasar</li>
@@ -48,7 +48,7 @@
         </ul>
       </div>
       <div class="info-block">
-        <h2>📐 Formula SAW</h2>
+        <h2>Formula SAW</h2>
         <div class="formula-box">
           <p><strong>Normalisasi Benefit:</strong><br/>r<sub>ij</sub> = x<sub>ij</sub> / max(x<sub>j</sub>)</p>
           <p><strong>Normalisasi Cost:</strong><br/>r<sub>ij</sub> = min(x<sub>j</sub>) / x<sub>ij</sub></p>
@@ -59,7 +59,7 @@
 
     <!-- INPUT SECTION -->
     <section class="card">
-      <h2>⚙️ Input Data</h2>
+      <h2>Input Data</h2>
 
       <!-- CRITERIA TABLE -->
       <div class="section-label">Kriteria & Bobot</div>
@@ -106,28 +106,48 @@
       </div>
 
       <div class="btn-row">
-        <button id="btn-reset" class="btn btn-ghost">↺ Reset Default</button>
-        <button id="btn-calc" class="btn btn-primary">🔢 Hitung SAW</button>
+        <button id="btn-reset" class="btn btn-ghost">Reset Default</button>
+        <button id="btn-calc" class="btn btn-primary">Hitung SAW</button>
       </div>
     </section>
 
     <!-- RESULTS SECTION (hidden until calculated) -->
     <section id="results-section" class="hidden">
 
-      <!-- NORMALIZATION TABLE -->
+      <!-- MATRIKS TERNORMALISASI (PECAHAN) -->
       <div class="card">
-        <h2>📋 Matriks Normalisasi (R)</h2>
+        <h2>Matriks Ternormalisasi (Pecahan)</h2>
+        <p class="table-desc">Normalisasi dalam bentuk pecahan: Benefit = x<sub>ij</sub>/max(x<sub>j</sub>), Cost = min(x<sub>j</sub>)/x<sub>ij</sub></p>
         <div class="table-wrap">
-          <table id="norm-table" class="data-table result-table">
-            <thead id="norm-thead"></thead>
-            <tbody id="norm-tbody"></tbody>
+          <table id="norm-frac-table" class="data-table result-table">
+            <thead id="norm-frac-thead"></thead>
+            <tbody id="norm-frac-tbody"></tbody>
           </table>
         </div>
       </div>
 
+      <!-- MATRIKS TERNORMALISASI (DESIMAL) -->
+      <div class="card">
+        <h2>Matriks Ternormalisasi (Desimal)</h2>
+        <p class="table-desc">Nilai pecahan yang dikonversi ke bentuk desimal</p>
+        <div class="table-wrap">
+          <table id="norm-dec-table" class="data-table result-table">
+            <thead id="norm-dec-thead"></thead>
+            <tbody id="norm-dec-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- NILAI PREFERENSI -->
+      <div class="card">
+        <h2>Nilai Preferensi (V<sub>i</sub>)</h2>
+        <p class="table-desc">Skor akhir SAW: V<sub>i</sub> = Σ (W<sub>j</sub> × r<sub>ij</sub>)</p>
+        <div class="pref-grid" id="pref-grid"></div>
+      </div>
+
       <!-- RANKING TABLE -->
       <div class="card">
-        <h2>🏆 Hasil Perhitungan & Ranking</h2>
+        <h2>Hasil Perhitungan &amp; Ranking</h2>
         <div class="table-wrap">
           <table id="rank-table" class="data-table result-table">
             <thead id="rank-thead"></thead>
